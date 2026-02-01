@@ -1,11 +1,13 @@
 ---
 id: ssr-performance-600-percent
 title: 'From 3000ms to 14ms: profiling hot paths and eliminating bottlenecks in TanStack Start'
+title: 'From 3000ms to 14ms: CPU profiling of TanStack Start SSR under heavy load'
+title: 'Profile, Fix, Repeat: 2x SSR Throughput in 20 PRs'
 ---
 
 ## Executive summary
 
-We improved TanStack Router's SSR performance dramatically. Under sustained load:
+We improved TanStack Router's SSR performance dramatically. Under sustained load (100 concurrent connections, 30 seconds):
 
 - **Throughput**: 477 req/s → 1,041 req/s (**2.2x**)
 - **Average latency**: 3,171ms → 14ms (**231x faster**)
@@ -121,13 +123,15 @@ Use cheap predicates first, then fall back to heavyweight parsing only when need
 const url = new URL(to, base)
 
 // After: check first, parse only if needed
-if (isAbsoluteUrl(to)) {
+if (safeInternalUrl(to)) {
+  // fast path: internal navigation, no parsing needed
+} else {
   const url = new URL(to, base)
   // ...external URL handling
-} else {
-  // fast path: internal navigation, no parsing needed
 }
 ```
+
+The `safeInternalUrl` check can be orders of magnitude cheaper than constructing a `URL` object[^url-cost] as long as we're ok with some false negatives in a few cases.
 
 See: [#6442](https://github.com/TanStack/router/pull/6442), [#6447](https://github.com/TanStack/router/pull/6447), [#6516](https://github.com/TanStack/router/pull/6516)
 
@@ -186,7 +190,7 @@ If you can guard a branch with a **build-time constant** like `isServer`, you ca
 - keep the general algorithm for correctness and edge cases
 - allow bundlers to delete the server-only branch from client builds
 
-In TanStack Router, `isServer` is provided via build-time resolution (client: `false`, server: `true`, dev/test: `undefined` with fallback), so dead code elimination can remove entire blocks.
+In TanStack Router, `isServer` is provided via build-time resolution (client: `false`, server: `true`, dev/test: `undefined` with fallback). Modern bundlers like Vite, Rollup, and esbuild perform dead code elimination (DCE)[^dce], removing unreachable branches when the condition is a compile-time constant.
 
 ### The transferable pattern
 
@@ -257,6 +261,8 @@ Benchmark: placeholder text, should link to Matteo's article.
 
 The "before" numbers show a server under severe stress: 25% of requests failed (likely timeouts), and p90/p95 hit the 10s timeout ceiling. After the optimizations, the server handles the same load comfortably with sub-30ms tail latency and zero failures.
 
+To be clear: TanStack Router was not broken before these changes. Under normal traffic, SSR worked fine. These numbers reflect behavior under *sustained heavy load*—the kind you see during traffic spikes or load testing. The optimizations ensure the server degrades gracefully instead of falling over.
+
 ### Flamegraph evidence slots
 
 - `<!-- FLAMEGRAPH: links-100 before -->`
@@ -287,3 +293,7 @@ There were many other improvements (client and server) not covered here. SSR per
 [^structural-sharing]: Structural sharing is a pattern from immutable data libraries (Immer, React Query, TanStack Store) where unchanged portions of data structures are reused by reference to minimize allocation and enable cheap equality checks.
 
 [^ssr-streaming]: With streaming SSR and Suspense, the server may render multiple chunks, but each chunk is still a single-pass render with no reactive updates.
+
+[^url-cost]: The WHATWG URL Standard requires significant parsing work: scheme detection, authority parsing, path normalization, query string handling, and percent-encoding. See the [URL parsing algorithm](https://url.spec.whatwg.org/#url-parsing) for the full state machine.
+
+[^dce]: Dead code elimination is a standard compiler optimization. See esbuild's documentation on [tree shaking](https://esbuild.github.io/api/#tree-shaking) and Rollup's [tree-shaking guide](https://rollupjs.org/introduction/#tree-shaking).
