@@ -1,8 +1,13 @@
 ---
-id: ssr-performance-600-percent
-title: 'From 3000ms to 14ms: profiling hot paths and eliminating bottlenecks in TanStack Start'
+published: 2026-02-04
+authors:
+  - Manuel Schiller
+  - Florian Pellet
 title: 'From 3000ms to 14ms: CPU profiling of TanStack Start SSR under heavy load'
 title: 'Profile, Fix, Repeat: 2x SSR Throughput in 20 PRs'
+title: '99.5% Latency Reduction in 20 PRs'
+title: '231x Latency Drop: SSR Flamegraphs under heavy load'
+title: '343x Faster Latency p95: Profiling SSR Hot Paths in TanStack Start'
 ---
 
 ## Executive summary
