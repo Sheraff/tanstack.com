@@ -263,13 +263,13 @@ Benchmark: placeholder text, should link to Matteo's article.
 
 ### Summary
 
-| Metric       |    Before |      After | Improvement  |
-| ------------ | --------: | ---------: | ------------ |
-| Success Rate |    75.52% |       100% | +32%         |
-| Throughput   | 477 req/s | 1041 req/s | +118% (2.2x) |
-| Avg Response |   3,171ms |     13.7ms | 231x faster  |
-| p(90)        |  10,001ms |     23.0ms | 435x faster  |
-| p(95)        |  10,001ms |     29.1ms | 343x faster  |
+| Metric        |    Before |      After | Improvement  |
+| ------------- | --------: | ---------: | ------------ |
+| Success Rate  |    75.52% |       100% | +32%         |
+| Throughput    | 477 req/s | 1041 req/s | +118% (2.2x) |
+| Avg Latency   |   3,171ms |     13.7ms | 231x faster  |
+| p(90) Latency |  10,001ms |     23.0ms | 435x faster  |
+| p(95) Latency |  10,001ms |     29.1ms | 343x faster  |
 
 The "before" numbers show a server under severe stress: 25% of requests failed (likely timeouts), and p90/p95 hit the 10s timeout ceiling. After the optimizations, the server handles the same load comfortably with sub-30ms tail latency and zero failures.
 
