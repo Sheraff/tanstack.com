@@ -225,6 +225,13 @@ return generalPath(input)
 
 See: [#4648](https://github.com/TanStack/router/pull/4648), [#6505](https://github.com/TanStack/router/pull/6505), [#6506](https://github.com/TanStack/router/pull/6506)
 
+### How we proved it internally
+
+|        |                                                                                                                                        |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Before | ![CPU profiling of interpolatePath before the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/interpolate-before.png) |
+| After  | ![CPU profiling of interpolatePath after the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/interpolate-after.png)   |
+
 ## Finding 4: `delete` can be expensive
 
 ### The mechanism
