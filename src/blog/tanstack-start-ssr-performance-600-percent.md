@@ -131,9 +131,9 @@ The `isSafeInternal` check can be orders of magnitude cheaper than constructing 
 
 See: [#6442](https://github.com/TanStack/router/pull/6442), [#6447](https://github.com/TanStack/router/pull/6447), [#6516](https://github.com/TanStack/router/pull/6516)
 
-### How we proved it internally
+### Measuring the improvements
 
-Like every PR in this series, this change was validates by profiling the impacted method before and after. For example we can see in the example below that the `buildLocation` method went from being one of the major bottlenecks of a navigation to being a very small part of the overall cost:
+Like every PR in this series, this change was validated by profiling the impacted method before and after. For example we can see in the example below that the `buildLocation` method went from being one of the major bottlenecks of a navigation to being a very small part of the overall cost:
 
 |        |                                                                                                                                         |
 | ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -176,7 +176,9 @@ function useRouterState() {
 
 See: [#6497](https://github.com/TanStack/router/pull/6497), [#6482](https://github.com/TanStack/router/pull/6482)
 
-### How we proved it internally
+### Measuring the improvements
+
+Taking the example of the `useRouterState` hook, we can see that most of the client-only work was removed from the SSR pass, leading to a ~2x improvement in the total CPU time of this hook.
 
 |        |                                                                                                                                        |
 | ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -225,7 +227,9 @@ return generalPath(input)
 
 See: [#4648](https://github.com/TanStack/router/pull/4648), [#6505](https://github.com/TanStack/router/pull/6505), [#6506](https://github.com/TanStack/router/pull/6506)
 
-### How we proved it internally
+### Measuring the improvements
+
+Taking the example of the `matchRoutesInternal` method, we can see that its children's total CPU time was reduced by ~25%.
 
 |        |                                                                                                                                        |
 | ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -257,7 +261,9 @@ this.shouldViewTransition = undefined
 
 See: [#6456](https://github.com/TanStack/router/pull/6456), [#6515](https://github.com/TanStack/router/pull/6515)
 
-### How we proved it internally
+### Measuring the improvements
+
+Taking the example of the `startViewTransition` method, we can see that the total CPU time of this method was reduced by >50%.
 
 |        |                                                                                                                                       |
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
@@ -305,14 +311,6 @@ For reference, the machine on which these were measured reaches 100% event-loop 
 The biggest gains came from removing whole categories of work from the server hot path. The general lesson is simple: throughput improves when you eliminate repeated work, allocations, and unnecessary generality in the steady state.
 
 There were many other improvements (client and server) not covered here. SSR performance work is ongoing.
-
-## Fill-in checklist before publishing
-
-- [x] Replace throughput placeholders with final numbers.
-- [x] Replace latency placeholders (avg/p90/p95) with final numbers.
-- [ ] Insert flamegraph screenshots and annotate the "before" hotspots and "after" removal.
-- [ ] Ensure every external claim has a citation and every internal claim has evidence.
-- [ ] Add `layouts-26-with-params` benchmark results (if desired).
 
 ## References
 
