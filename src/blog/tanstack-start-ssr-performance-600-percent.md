@@ -71,6 +71,7 @@ autocannon -d 30 -c 100 --warmup [ -d 2 -c 20 ] http://localhost:3000/bench/link
 ### CPU profiling with `@platformatic/flame`
 
 To record a CPU profile of the server under load, we use [`@platformatic/flame`](https://github.com/platformatic/flame) to start the server:
+
 ```sh
 flame run ./dist/server.mjs
 ```
@@ -97,7 +98,6 @@ Our benchmarks were stable enough to produce very similar results on a range of 
 - OS: macOS 15.7
 
 The exact benchmark code is available in [our repository](https://github.com/TanStack/router/tree/main/e2e/react-start/flamegraph-bench).
-
 
 ## Finding 1: `URL` is expensive in server hot paths
 
@@ -134,7 +134,6 @@ See: [#6442](https://github.com/TanStack/router/pull/6442), [#6447](https://gith
 ### How we proved it internally
 
 Like every PR in this series, this was profiling the impacted method before and after the change. For example we can see in the example below that the `buildLocation` method went from being one of the major bottlenecks of a navigation to being a very small part of the overall cost:
-
 
 |        |                                                                                                                                         |
 | ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -267,12 +266,15 @@ To be clear: TanStack Start was not broken before these changes. Under normal tr
 The following graphs show event-loop utilization against throughput for each feature-focused endpoint, before and after the optimizations. Lower utilization at the same req/s means more headroom; higher req/s at the same utilization means more capacity.
 
 #### links-100
+
 ![Event-loop utilization vs throughput for links-100, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/links-after.png)
 
 #### layouts-26-with-params
+
 ![Event-loop utilization vs throughput for nested routes, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/nested-after.png)
 
 #### empty (baseline)
+
 ![Event-loop utilization vs throughput for minimal route, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/nothing-after.png)
 
 ### Flamegraph evidence slots
