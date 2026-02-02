@@ -35,7 +35,6 @@ We did it with a repeatable process, not a single clever trick:
 
 The changes span over 20 PRs; we highlight the highest-impact patterns below.
 
-
 <!-- the "What we optimized" section and "Methodology" feel a little redundant because "what we optimized" doesn't actually say what we optimized, just *how* we did it, which is part of the methodology. -->
 
 ## What we optimized (and what we did not)
@@ -86,7 +85,6 @@ The resulting flamegraph can be read with a tool like [Speedscope](https://www.s
 - Focus on **self time** first. That is where the CPU is actually spent, not just where time is waiting on children.
 - Fix one hotspot, re-run, and re-profile.
 - Prefer changes that remove work in the steady state, not just shift it.
-
 
 <!-- what do we want to say with these flamegraphs? How to understand them? We're already showing flamegraphs for every *finding* below. I'm not really sure what to say here. -->
 
@@ -197,7 +195,7 @@ Taking the example of the `useRouterState` hook, we can see that most of the cli
 
 ### The mechanism
 
-Client code cares about bundle size. Server code cares about CPU time per request. Those constraints are different (this is a *general* rule, not a *universal* one).
+Client code cares about bundle size. Server code cares about CPU time per request. Those constraints are different (this is a _general_ rule, not a _universal_ one).
 
 If you can guard a branch with a **build-time constant** like `isServer`, you can:
 
@@ -338,4 +336,4 @@ There were many other improvements (client and server) not covered here. SSR per
 
 [^elu]: Event-loop utilization is the percentage of time the event loop is busy utilizing the CPU. See this [nodesource blog post](https://nodesource.com/blog/event-loop-utilization-nodejs) for more details.
 
-[^empty-node-http-server]: To get a reference for the values we were measuring, we ran a similar `autocannon` benchmark on the smallest possible node http server: `require('http').createServer((q,s)=>s.end()).listen(3000)`. This tells us the *theoretical* maximum throughput of the machine and test setup.
+[^empty-node-http-server]: To get a reference for the values we were measuring, we ran a similar `autocannon` benchmark on the smallest possible node http server: `require('http').createServer((q,s)=>s.end()).listen(3000)`. This tells us the _theoretical_ maximum throughput of the machine and test setup.
