@@ -229,7 +229,7 @@ See: [#4648](https://github.com/TanStack/router/pull/4648), [#6505](https://gith
 
 ### The mechanism
 
-Modern engines optimize property access using object "shapes" (e.g. V8 HiddenClasses / JSC Structures) and inline caches. `delete` changes an object's shape and can force a slower internal representation (e.g. dictionary/slow properties), which can disable or degrade those optimizations and deopt optimized code.[^v8-fast-properties][^webkit-delete-ic]
+Modern engines optimize property access using object "shapes" (e.g. V8 HiddenClasses[^v8-fast-properties] / JSC Structures[^webkit-delete-ic]) and inline caches. `delete` changes an object's shape and can force a slower internal representation (e.g. dictionary/slow properties), which can disable or degrade those optimizations and deopt optimized code.
 
 ### The transferable pattern
 
@@ -242,12 +242,10 @@ Avoid `delete` in hot paths. Prefer patterns that don't mutate object shapes in-
 
 ```typescript
 // Before: mutates shape
-delete linkProps.activeProps
-delete linkProps.inactiveProps
+delete this.shouldViewTransition
 
-// After: create new object without keys
-const { activeProps, inactiveProps, ...rest } = linkProps
-return rest
+// After: set to undefined
+this.shouldViewTransition = undefined
 ```
 
 See: [#6456](https://github.com/TanStack/router/pull/6456), [#6515](https://github.com/TanStack/router/pull/6515)
