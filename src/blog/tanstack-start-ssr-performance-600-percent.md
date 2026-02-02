@@ -277,7 +277,7 @@ To be clear: TanStack Start was not broken before these changes. Under normal tr
 
 ### Event-loop utilization
 
-The following graphs show event-loop utilization against throughput for each feature-focused endpoint, before and after the optimizations. Lower utilization at the same req/s means more headroom; higher req/s at the same utilization means more capacity.
+The following graphs show event-loop utilization[^elu] against throughput for each feature-focused endpoint, before and after the optimizations. Lower utilization at the same req/s means more headroom; higher req/s at the same utilization means more capacity.
 
 #### links-100
 
@@ -314,7 +314,7 @@ There were many other improvements (client and server) not covered here. SSR per
 
 ## References
 
-[^v8-fast-properties]: V8 team, "Fast properties in V8" `https://v8.dev/blog/fast-properties`
+[^v8-fast-properties]: V8 team, "Fast properties in V8" `https://v8.dev/blog/fast-properties`. Great article, but 9 years old so things might have changed.
 
 [^webkit-delete-ic]: WebKit, "A Tour of Inline Caching with Delete" `https://webkit.org/blog/10298/inline-caching-delete/`
 
@@ -327,3 +327,5 @@ There were many other improvements (client and server) not covered here. SSR per
 [^export-conditions]: Conditional exports are a Node.js feature that allows packages to define different entry points based on environment or import method. See [Conditional exports](https://nodejs.org/api/packages.html#conditional-exports) in the Node.js documentation.
 
 [^dce]: Dead code elimination is a standard compiler optimization. See esbuild's documentation on [tree shaking](https://esbuild.github.io/api/#tree-shaking), Rollup's [tree-shaking guide](https://rollupjs.org/introduction/#tree-shaking) and Rich Harris's article on [dead code elimination](https://medium.com/@Rich_Harris/tree-shaking-versus-dead-code-elimination-d3765df85c80).
+
+[^elu]: Event-loop utilization is the percentage of time the event loop is busy utilizing the CPU. See this [nodesource blog post](https://nodesource.com/blog/event-loop-utilization-nodejs) for more details.
