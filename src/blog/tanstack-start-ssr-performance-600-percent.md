@@ -1,18 +1,18 @@
 ---
-published: 2026-02-04
+published: 2026-02-01
 authors:
   - Manuel Schiller
   - Florian Pellet
 title: 'From 3000ms to 14ms: CPU profiling of TanStack Start SSR under heavy load'
-title: 'Profile, Fix, Repeat: 2x SSR Throughput in 20 PRs'
-title: '99.5% Latency Reduction in 20 PRs'
-title: '231x Latency Drop: SSR Flamegraphs under heavy load'
-title: '343x Faster Latency p95: Profiling SSR Hot Paths in TanStack Start'
+# title: 'Profile, Fix, Repeat: 2x SSR Throughput in 20 PRs'
+# title: '99.5% Latency Reduction in 20 PRs'
+# title: '231x Latency Drop: SSR Flamegraphs under heavy load'
+# title: '343x Faster Latency p95: Profiling SSR Hot Paths in TanStack Start'
 ---
 
 ## Executive summary
 
-We improved TanStack Router's SSR performance dramatically. Under sustained load (100 concurrent connections, 30 seconds):
+We improved TanStack Start's SSR performance dramatically. Under sustained load (100 concurrent connections, 30 seconds):
 
 - **Throughput**: 477 req/s → 1,041 req/s (**2.2x**)
 - **Average latency**: 3,171ms → 14ms (**231x faster**)
@@ -31,7 +31,7 @@ We did it with a repeatable process, not a single clever trick:
   - add server-only fast paths behind a build-time `isServer` flag
   - avoid `delete` in performance-sensitive code
 
-The changes span ~20 PRs; we highlight the highest-impact patterns below. This article focuses on methodology and mechanisms you can reuse in any SSR framework.
+The changes span over 20 PRs; we highlight the highest-impact patterns below.
 
 ## What we optimized (and what we did not)
 
@@ -57,7 +57,7 @@ This is transferable: isolate the subsystem you want to improve, and benchmark t
 
 ### Load generation with `autocannon`
 
-We used `autocannon` to generate a 30s sustained load. We tracked:
+We used [`autocannon`](https://github.com/mcollina/autocannon) to generate a 30s sustained load. We tracked:
 
 - req/s
 - latency distribution (avg, p95, p99)
@@ -70,9 +70,12 @@ autocannon -d 30 -c 100 --warmup [ -d 2 -c 20 ] http://localhost:3000/bench/link
 
 ### CPU profiling with `@platformatic/flame`
 
-While the server handled load, we recorded CPU profiles using `@platformatic/flame`.
+To record a CPU profile of the server under load, we use [`@platformatic/flame`](https://github.com/platformatic/flame) to start the server:
+```sh
+flame run ./dist/server.mjs
+```
 
-How we read the flamegraph:
+The resulting flamegraph can be read with a tool like [Speedscope](https://www.speedscope.app/):
 
 - Focus on **self time** first. That is where the CPU is actually spent, not just where time is waiting on children.
 - Fix one hotspot, re-run, and re-profile.
@@ -87,26 +90,14 @@ Placeholders you should replace with real screenshots:
 
 ### Reproducing these benchmarks
 
-**Environment:**
-
-Our benchmarks were stable enough to produce very similar results on a range of setups. However here are the exact environment details we used to run the benchmarks:
+Our benchmarks were stable enough to produce very similar results on a range of setups. However here are the exact environment details we used to run most of the benchmarks:
 
 - Node.js: v24.12.0
-- Hardware: Macbook Pro M3
+- Hardware: Macbook Pro M3 Max
 - OS: macOS 15.7
 
-**Running the benchmark:**
+The exact benchmark code is available in [our repository](https://github.com/TanStack/router/tree/main/e2e/react-start/flamegraph-bench).
 
-For fast iteration, we setup a single `pnpm bench` command what would concurrently
-
-- start the built server through `@platformatic/flame` to profile it
-  ```sh
-  flame run ./dist/server.mjs
-  ```
-- run `autocannon` to stress the server by firing many requests at it
-  ```sh
-  autocannon -d 30 -c 100 --warmup [ -d 2 -c 20 ] http://localhost:3000/bench/links-100
-  ```
 
 ## Finding 1: `URL` is expensive in server hot paths
 
@@ -118,7 +109,7 @@ In our SSR profiles, `URL` construction/parsing showed up as significant self-ti
 
 Use cheap predicates first, then fall back to heavyweight parsing only when needed.
 
-- If a value is clearly internal (eg starts with `/`, `.`, `..`), don't try to parse it as an absolute URL.
+- If a value is clearly internal (eg starts with `/` but not `//`, or starts with `.`), don't try to parse it as an absolute URL.
 - If a feature is only needed in edge cases (eg rewrite logic), keep it off the default path.
 
 ### What we changed
@@ -128,7 +119,7 @@ Use cheap predicates first, then fall back to heavyweight parsing only when need
 const url = new URL(to, base)
 
 // After: check first, parse only if needed
-if (safeInternalUrl(to)) {
+if (isSafeInternal(to)) {
   // fast path: internal navigation, no parsing needed
 } else {
   const url = new URL(to, base)
@@ -136,16 +127,19 @@ if (safeInternalUrl(to)) {
 }
 ```
 
-The `safeInternalUrl` check can be orders of magnitude cheaper than constructing a `URL` object[^url-cost] as long as we're ok with some false negatives in a few cases.
+The `isSafeInternal` check can be orders of magnitude cheaper than constructing a `URL` object[^url-cost] as long as we're ok with some false negatives in a few cases.
 
 See: [#6442](https://github.com/TanStack/router/pull/6442), [#6447](https://github.com/TanStack/router/pull/6447), [#6516](https://github.com/TanStack/router/pull/6516)
 
 ### How we proved it internally
 
-This claim should be backed by your flamegraphs and measurements, not by opinion.
+Like every PR in this series, this was profiling the impacted method before and after the change. For example we can see in the example below that the `buildLocation` method went from being one of the major bottlenecks of a navigation to being a very small part of the overall cost:
 
-- `<!-- EVIDENCE: flamegraph shows URL construction/parsing as top self-time hotspot before -->`
-- `<!-- EVIDENCE: same hotspot reduced/removed after -->`
+
+|        |                                                                                                                                         |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Before | ![CPU profiling of buildLocation before the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/before-build-location.png) |
+| After  | ![CPU profiling of buildLocation after the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/after-build-location.png)   |
 
 ## Finding 2: SSR does not need reactivity
 
@@ -170,18 +164,18 @@ This is the difference between "server = a function" and "client = a reactive sy
 
 ```typescript
 // Before: same code path for client and server
-store.subscribe(() => {
-  /* ... */
-}) // overhead on server
-const next = replaceEqualDeep(prev, value) // unnecessary structural sharing
+function useRouterState() {
+  return useStore(router, { ... }) // unnecessary subscription on the server
+}
 
 // After: server gets a simple snapshot
-if (isServer) {
-  return computeSnapshot() // no subscriptions, no structural sharing
+function useRouterState() {
+  if (isServer) return router.store // no subscriptions on the server
+  return useStore(router, { ... }) // regular behavior on the client
 }
 ```
 
-See: [#6497](https://github.com/TanStack/router/pull/6497), [#6502](https://github.com/TanStack/router/pull/6502)
+See: [#6497](https://github.com/TanStack/router/pull/6497), [#6482](https://github.com/TanStack/router/pull/6482)
 
 ## Finding 3: server-only fast paths are worth it (when gated correctly)
 
@@ -195,7 +189,7 @@ If you can guard a branch with a **build-time constant** like `isServer`, you ca
 - keep the general algorithm for correctness and edge cases
 - allow bundlers to delete the server-only branch from client builds
 
-In TanStack Router, `isServer` is provided via build-time resolution (client: `false`, server: `true`, dev/test: `undefined` with fallback). Modern bundlers like Vite, Rollup, and esbuild perform dead code elimination (DCE)[^dce], removing unreachable branches when the condition is a compile-time constant.
+In TanStack Start, `isServer` is provided via build-time resolution (client: `false`, server: `true`, dev/test: `undefined` with fallback). Modern bundlers like Vite, Rollup, and esbuild perform dead code elimination (DCE)[^dce], removing unreachable branches when the condition is a compile-time constant.
 
 ### The transferable pattern
 
@@ -266,7 +260,20 @@ Benchmark: placeholder text, should link to Matteo's article.
 
 The "before" numbers show a server under severe stress: 25% of requests failed (likely timeouts), and p90/p95 hit the 10s timeout ceiling. After the optimizations, the server handles the same load comfortably with sub-30ms tail latency and zero failures.
 
-To be clear: TanStack Router was not broken before these changes. Under normal traffic, SSR worked fine. These numbers reflect behavior under _sustained heavy load_—the kind you see during traffic spikes or load testing. The optimizations ensure the server degrades gracefully instead of falling over.
+To be clear: TanStack Start was not broken before these changes. Under normal traffic, SSR worked fine. These numbers reflect behavior under _sustained heavy load_—the kind you see during traffic spikes or load testing. The optimizations ensure the server degrades gracefully instead of falling over.
+
+### Event-loop utilization
+
+The following graphs show event-loop utilization against throughput for each feature-focused endpoint, before and after the optimizations. Lower utilization at the same req/s means more headroom; higher req/s at the same utilization means more capacity.
+
+#### links-100
+![Event-loop utilization vs throughput for links-100, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/links-after.png)
+
+#### layouts-26-with-params
+![Event-loop utilization vs throughput for nested routes, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/nested-after.png)
+
+#### empty (baseline)
+![Event-loop utilization vs throughput for minimal route, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/nothing-after.png)
 
 ### Flamegraph evidence slots
 
