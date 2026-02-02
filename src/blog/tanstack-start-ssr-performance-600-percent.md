@@ -314,11 +314,11 @@ There were many other improvements (client and server) not covered here. SSR per
 
 ## References
 
-[^v8-fast-properties]: V8 team, "Fast properties in V8" `https://v8.dev/blog/fast-properties`. Great article, but 9 years old so things might have changed.
+[^v8-fast-properties]: V8 team, [Fast properties in V8](https://v8.dev/blog/fast-properties). Great article, but 9 years old so things might have changed.
 
-[^webkit-delete-ic]: WebKit, "A Tour of Inline Caching with Delete" `https://webkit.org/blog/10298/inline-caching-delete/`
+[^webkit-delete-ic]: WebKit, [A Tour of Inline Caching with Delete](https://webkit.org/blog/10298/inline-caching-delete/)
 
-[^structural-sharing]: Structural sharing is a pattern from immutable data libraries (Immer, React Query, TanStack Store) where unchanged portions of data structures are reused by reference enable cheap equality checks. See [Structural Sharing](https://tanstack.com/query/latest/docs/framework/react/guides/render-optimizations#structural-sharing) in the TanStack Query documentation.
+[^structural-sharing]: Structural sharing is a pattern from immutable data libraries (Immer, React Query, TanStack Store) where unchanged portions of data structures are reused by reference to enable cheap equality checks. See [Structural Sharing](https://tanstack.com/query/latest/docs/framework/react/guides/render-optimizations#structural-sharing) in the TanStack Query documentation.
 
 [^ssr-streaming]: With streaming SSR and Suspense, the server may render multiple chunks, but each chunk is still a single-pass render with no reactive updates. See [renderToPipeableStream](https://react.dev/reference/react-dom/server/renderToPipeableStream) in the React documentation.
 
