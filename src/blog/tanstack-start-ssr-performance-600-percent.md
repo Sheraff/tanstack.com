@@ -263,13 +263,13 @@ Benchmark: placeholder text, should link to Matteo's article.
 
 ### Summary
 
-| Metric        |    Before |      After | Improvement  |
-| ------------- | --------: | ---------: | ------------ |
-| Success Rate  |    75.52% |       100% | +32%         |
-| Throughput    | 477 req/s | 1041 req/s | +118% (2.2x) |
-| Avg Latency   |   3,171ms |     13.7ms | 231x faster  |
-| p(90) Latency |  10,001ms |     23.0ms | 435x faster  |
-| p(95) Latency |  10,001ms |     29.1ms | 343x faster  |
+| Metric        |    Before |      After | Improvement              |
+| ------------- | --------: | ---------: | ------------------------ |
+| Success Rate  |    75.52% |       100% | does not fail under load |
+| Throughput    | 477 req/s | 1041 req/s | +118% (2.2x)             |
+| Avg Latency   |   3,171ms |     13.7ms | 231x faster              |
+| p(90) Latency |  10,001ms |     23.0ms | 435x faster              |
+| p(95) Latency |  10,001ms |     29.1ms | 343x faster              |
 
 The "before" numbers show a server under severe stress: 25% of requests failed (likely timeouts), and p90/p95 hit the 10s timeout ceiling. After the optimizations, the server handles the same load comfortably with sub-30ms tail latency and zero failures.
 
@@ -279,24 +279,19 @@ To be clear: TanStack Start was not broken before these changes. Under normal tr
 
 The following graphs show event-loop utilization[^elu] against throughput for each feature-focused endpoint, before and after the optimizations. Lower utilization at the same req/s means more headroom; higher req/s at the same utilization means more capacity.
 
-#### links-100
+For reference, the machine on which these were measured reaches 100% event-loop utilization at 100k req/s on an empty node http server.
+
+#### 100 links per page
 
 ![Event-loop utilization vs throughput for links-100, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/elu-links.png)
 
-#### layouts-26-with-params
+#### Deeply nested layout routes
 
 ![Event-loop utilization vs throughput for nested routes, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/elu-nested.png)
 
-#### empty (baseline)
+#### Minimal route (baseline)
 
 ![Event-loop utilization vs throughput for minimal route, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/elu-empty.png)
-
-### Flamegraph evidence slots
-
-- `<!-- FLAMEGRAPH: links-100 before -->`
-- `<!-- FLAMEGRAPH: links-100 after -->`
-- `<!-- FLAMEGRAPH: layouts-26-with-params before -->`
-- `<!-- FLAMEGRAPH: layouts-26-with-params after -->`
 
 ## Conclusion
 
