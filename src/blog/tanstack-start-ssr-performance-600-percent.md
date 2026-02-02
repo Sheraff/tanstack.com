@@ -10,9 +10,11 @@ title: 'From 3000ms to 14ms: CPU profiling of TanStack Start SSR under heavy loa
 # title: '343x Faster Latency p95: Profiling SSR Hot Paths in TanStack Start'
 ---
 
-## Executive summary
+## TL;DR
 
 We improved TanStack Start's SSR performance dramatically. Under sustained load (100 concurrent connections, 30 seconds):
+
+<!-- these are matteo's numbers, they don't lool amazing (low throughput), maybe we should use our own numbers? we'll cite his in the conclusion anyway. -->
 
 - **Throughput**: 477 req/s → 1,041 req/s (**2.2x**)
 - **Average latency**: 3,171ms → 14ms (**231x faster**)
@@ -32,6 +34,9 @@ We did it with a repeatable process, not a single clever trick:
   - avoid `delete` in performance-sensitive code
 
 The changes span over 20 PRs; we highlight the highest-impact patterns below.
+
+
+<!-- the "What we optimized" section and "Methodology" feel a little redundant because "what we optimized" doesn't actually say what we optimized, just *how* we did it, which is part of the methodology. -->
 
 ## What we optimized (and what we did not)
 
@@ -81,6 +86,9 @@ The resulting flamegraph can be read with a tool like [Speedscope](https://www.s
 - Focus on **self time** first. That is where the CPU is actually spent, not just where time is waiting on children.
 - Fix one hotspot, re-run, and re-profile.
 - Prefer changes that remove work in the steady state, not just shift it.
+
+
+<!-- what do we want to say with these flamegraphs? How to understand them? We're already showing flamegraphs for every *finding* below. I'm not really sure what to say here. -->
 
 Placeholders you should replace with real screenshots:
 
@@ -189,7 +197,7 @@ Taking the example of the `useRouterState` hook, we can see that most of the cli
 
 ### The mechanism
 
-Client code cares about bundle size. Server code cares about CPU time per request. Those constraints are different.
+Client code cares about bundle size. Server code cares about CPU time per request. Those constraints are different (this is a *general* rule, not a *universal* one).
 
 If you can guard a branch with a **build-time constant** like `isServer`, you can:
 
@@ -292,7 +300,7 @@ To be clear: TanStack Start was not broken before these changes. Under normal tr
 
 The following graphs show event-loop utilization[^elu] against throughput for each feature-focused endpoint, before and after the optimizations. Lower utilization at the same req/s means more headroom; higher req/s at the same utilization means more capacity.
 
-For reference, the machine on which these were measured reaches 100% event-loop utilization at 100k req/s on an empty node http server.
+For reference, the machine on which these were measured reaches 100% event-loop utilization at 100k req/s on an empty node http server[^empty-node-http-server].
 
 #### 100 links per page
 
@@ -329,3 +337,5 @@ There were many other improvements (client and server) not covered here. SSR per
 [^dce]: Dead code elimination is a standard compiler optimization. See esbuild's documentation on [tree shaking](https://esbuild.github.io/api/#tree-shaking), Rollup's [tree-shaking guide](https://rollupjs.org/introduction/#tree-shaking) and Rich Harris's article on [dead code elimination](https://medium.com/@Rich_Harris/tree-shaking-versus-dead-code-elimination-d3765df85c80).
 
 [^elu]: Event-loop utilization is the percentage of time the event loop is busy utilizing the CPU. See this [nodesource blog post](https://nodesource.com/blog/event-loop-utilization-nodejs) for more details.
+
+[^empty-node-http-server]: To get a reference for the values we were measuring, we ran a similar `autocannon` benchmark on the smallest possible node http server: `require('http').createServer((q,s)=>s.end()).listen(3000)`. This tells us the *theoretical* maximum throughput of the machine and test setup.
