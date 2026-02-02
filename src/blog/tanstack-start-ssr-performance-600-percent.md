@@ -59,8 +59,8 @@ This is transferable: isolate the subsystem you want to improve, and benchmark t
 
 We used [`autocannon`](https://github.com/mcollina/autocannon) to generate a 30s sustained load. We tracked:
 
-- req/s
-- latency distribution (avg, p95, p99)
+- requests per second (req/s)
+- latency distribution (average, p95, p99)
 
 Example command (adjust concurrency and route):
 
@@ -133,12 +133,12 @@ See: [#6442](https://github.com/TanStack/router/pull/6442), [#6447](https://gith
 
 ### How we proved it internally
 
-Like every PR in this series, this was profiling the impacted method before and after the change. For example we can see in the example below that the `buildLocation` method went from being one of the major bottlenecks of a navigation to being a very small part of the overall cost:
+Like every PR in this series, this change was validates by profiling the impacted method before and after. For example we can see in the example below that the `buildLocation` method went from being one of the major bottlenecks of a navigation to being a very small part of the overall cost:
 
 |        |                                                                                                                                         |
 | ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Before | ![CPU profiling of buildLocation before the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/before-build-location.png) |
-| After  | ![CPU profiling of buildLocation after the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/after-build-location.png)   |
+| Before | ![CPU profiling of buildLocation before the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/build-location-before.png) |
+| After  | ![CPU profiling of buildLocation after the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/build-location-after.png)   |
 
 ## Finding 2: SSR does not need reactivity
 
@@ -147,15 +147,15 @@ Like every PR in this series, this was profiling the impacted method before and 
 SSR renders once per request.[^ssr-streaming] There is no ongoing UI to reactively update, so on the server:
 
 - store subscriptions add overhead but provide no benefit
-- structural sharing[^structural-sharing] (replace-equal) reduces re-renders, but SSR does not re-render
-- batching reactive notifications is irrelevant if nothing is subscribed
+- structural sharing[^structural-sharing] reduces re-renders, but SSR does not re-render
+- batching reactive updates is irrelevant if nothing is subscribed
 
 ### The transferable pattern
 
-If you have a runtime that supports both client reactivity and SSR, separate them:
+If your code supports both client reactivity and SSR, gate the reactive machinery so the server can skip it entirely:
 
-- on the server: compute a snapshot and return it
-- on the client: subscribe and use structural sharing to reduce render churn
+- on the server: return state directly, no subscriptions, reduce immutability overhead
+- on the client: subscribe normally
 
 This is the difference between "server = a function" and "client = a reactive system".
 
@@ -176,6 +176,13 @@ function useRouterState() {
 
 See: [#6497](https://github.com/TanStack/router/pull/6497), [#6482](https://github.com/TanStack/router/pull/6482)
 
+### How we proved it internally
+
+|        |                                                                                                                                        |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Before | ![CPU profiling of useRouterState before the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/router-state-before.png) |
+| After  | ![CPU profiling of useRouterState after the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/router-state-after.png)   |
+
 ## Finding 3: server-only fast paths are worth it (when gated correctly)
 
 ### The mechanism
@@ -188,7 +195,7 @@ If you can guard a branch with a **build-time constant** like `isServer`, you ca
 - keep the general algorithm for correctness and edge cases
 - allow bundlers to delete the server-only branch from client builds
 
-In TanStack Start, `isServer` is provided via build-time resolution (client: `false`, server: `true`, dev/test: `undefined` with fallback). Modern bundlers like Vite, Rollup, and esbuild perform dead code elimination (DCE)[^dce], removing unreachable branches when the condition is a compile-time constant.
+In TanStack Start, `isServer` is provided via build-time resolution of export conditions[^export-conditions] (client: `false`, server: `true`, dev/test: `undefined` with fallback). Modern bundlers like Vite, Rollup, and esbuild perform dead code elimination (DCE)[^dce], removing unreachable branches when the condition is a compile-time constant.
 
 ### The transferable pattern
 
@@ -197,7 +204,7 @@ Write two implementations:
 - **fast path** for the common case
 - **general path** for correctness
 
-And gate them behind a build-time constant so you don't ship server-only logic to clients.
+And gate them behind a build-time constant so you don't inflate the bundle size for clients.
 
 ### What we changed
 
@@ -208,9 +215,11 @@ And gate them behind a build-time constant so you don't ship server-only logic t
 
 if (isServer) {
   // server-only fast path (removed from client bundle)
-  return fastServerPath(input)
+  if (isCommonCase(input)) {
+    return fastServerPath(input)
+  }
 }
-// general algorithm (used on client, fallback on server in dev)
+// general algorithm that handles all cases
 return generalPath(input)
 ```
 
@@ -243,6 +252,13 @@ return rest
 
 See: [#6456](https://github.com/TanStack/router/pull/6456), [#6515](https://github.com/TanStack/router/pull/6515)
 
+### How we proved it internally
+
+|        |                                                                                                                                       |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Before | ![CPU profiling of startViewTransition before the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/delete-before.png) |
+| After  | ![CPU profiling of startViewTransition after the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/delete-after.png)   |
+
 ## Results
 
 Benchmark: placeholder text, should link to Matteo's article.
@@ -267,15 +283,15 @@ The following graphs show event-loop utilization against throughput for each fea
 
 #### links-100
 
-![Event-loop utilization vs throughput for links-100, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/links-after.png)
+![Event-loop utilization vs throughput for links-100, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/elu-links.png)
 
 #### layouts-26-with-params
 
-![Event-loop utilization vs throughput for nested routes, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/nested-after.png)
+![Event-loop utilization vs throughput for nested routes, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/elu-nested.png)
 
 #### empty (baseline)
 
-![Event-loop utilization vs throughput for minimal route, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/nothing-after.png)
+![Event-loop utilization vs throughput for minimal route, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/elu-empty.png)
 
 ### Flamegraph evidence slots
 
@@ -304,10 +320,12 @@ There were many other improvements (client and server) not covered here. SSR per
 
 [^webkit-delete-ic]: WebKit, "A Tour of Inline Caching with Delete" `https://webkit.org/blog/10298/inline-caching-delete/`
 
-[^structural-sharing]: Structural sharing is a pattern from immutable data libraries (Immer, React Query, TanStack Store) where unchanged portions of data structures are reused by reference to minimize allocation and enable cheap equality checks.
+[^structural-sharing]: Structural sharing is a pattern from immutable data libraries (Immer, React Query, TanStack Store) where unchanged portions of data structures are reused by reference enable cheap equality checks. See [Structural Sharing](https://tanstack.com/query/latest/docs/framework/react/guides/render-optimizations#structural-sharing) in the TanStack Query documentation.
 
-[^ssr-streaming]: With streaming SSR and Suspense, the server may render multiple chunks, but each chunk is still a single-pass render with no reactive updates.
+[^ssr-streaming]: With streaming SSR and Suspense, the server may render multiple chunks, but each chunk is still a single-pass render with no reactive updates. See [renderToPipeableStream](https://react.dev/reference/react-dom/server/renderToPipeableStream) in the React documentation.
 
 [^url-cost]: The WHATWG URL Standard requires significant parsing work: scheme detection, authority parsing, path normalization, query string handling, and percent-encoding. See the [URL parsing algorithm](https://url.spec.whatwg.org/#url-parsing) for the full state machine.
 
-[^dce]: Dead code elimination is a standard compiler optimization. See esbuild's documentation on [tree shaking](https://esbuild.github.io/api/#tree-shaking) and Rollup's [tree-shaking guide](https://rollupjs.org/introduction/#tree-shaking).
+[^export-conditions]: Conditional exports are a Node.js feature that allows packages to define different entry points based on environment or import method. See [Conditional exports](https://nodejs.org/api/packages.html#conditional-exports) in the Node.js documentation.
+
+[^dce]: Dead code elimination is a standard compiler optimization. See esbuild's documentation on [tree shaking](https://esbuild.github.io/api/#tree-shaking), Rollup's [tree-shaking guide](https://rollupjs.org/introduction/#tree-shaking) and Rich Harris's article on [dead code elimination](https://medium.com/@Rich_Harris/tree-shaking-versus-dead-code-elimination-d3765df85c80).
