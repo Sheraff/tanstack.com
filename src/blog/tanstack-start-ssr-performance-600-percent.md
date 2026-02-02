@@ -14,7 +14,7 @@ title: 'From 3000ms to 14ms: CPU profiling of TanStack Start SSR under heavy loa
 
 We improved TanStack Start's SSR performance dramatically. Under sustained load (100 concurrent connections, 30 seconds):
 
-<!-- these are matteo's numbers, they don't lool amazing (low throughput), maybe we should use our own numbers? we'll cite his in the conclusion anyway. -->
+<!-- these are matteo's numbers, they don't look amazing (low throughput), maybe we should use our own numbers? we'll cite his in the conclusion anyway. -->
 
 - **Throughput**: 477 req/s → 1,041 req/s (**2.2x**)
 - **Average latency**: 3,171ms → 14ms (**231x faster**)
@@ -33,7 +33,7 @@ We did it with a repeatable process, not a single clever trick:
   - add server-only fast paths behind a build-time `isServer` flag
   - avoid `delete` in performance-sensitive code
 
-The changes span over 20 PRs; we highlight the highest-impact patterns below.
+The changes span over [20 PRs](https://github.com/TanStack/router/compare/v1.154.4...v1.157.18); we highlight the highest-impact patterns below.
 
 <!-- the "What we optimized" section and "Methodology" feel a little redundant because "what we optimized" doesn't actually say what we optimized, just *how* we did it, which is part of the methodology. -->
 
@@ -115,8 +115,8 @@ In our SSR profiles, `URL` construction/parsing showed up as significant self-ti
 
 Use cheap predicates first, then fall back to heavyweight parsing only when needed.
 
-- If a value is clearly internal (eg starts with `/` but not `//`, or starts with `.`), don't try to parse it as an absolute URL.
-- If a feature is only needed in edge cases (eg rewrite logic), keep it off the default path.
+- If a value is clearly internal (e.g. starts with `/` but not `//`, or starts with `.`), don't try to parse it as an absolute URL.
+- If a feature is only needed in edge cases (e.g. rewrite logic), keep it off the default path.
 
 ### What we changed
 
@@ -133,7 +133,7 @@ if (isSafeInternal(to)) {
 }
 ```
 
-The `isSafeInternal` check can be orders of magnitude cheaper than constructing a `URL` object[^url-cost] as long as we're ok with some false negatives in a few cases.
+The `isSafeInternal` check can be orders of magnitude cheaper than constructing a `URL` object[^url-cost]. It's meant to be a cheap predicate, so it is okay if some URLs that _would_ be internal are classified as external and go through the slower path.
 
 See: [#6442](https://github.com/TanStack/router/pull/6442), [#6447](https://github.com/TanStack/router/pull/6447), [#6516](https://github.com/TanStack/router/pull/6516)
 
@@ -279,6 +279,8 @@ Taking the example of the `startViewTransition` method, we can see that the tota
 ## Results
 
 Benchmark: placeholder text, should link to Matteo's article.
+
+<!-- we need to wait for matteo's article to be published to link to it. -->
 
 ### Summary
 
