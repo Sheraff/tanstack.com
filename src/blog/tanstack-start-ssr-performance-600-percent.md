@@ -40,8 +40,8 @@ We highlight the highest-impact patterns below.
 We are not claiming that any single line of code is "the" reason. This work spanned over [20 PRs](https://github.com/TanStack/router/compare/v1.154.4...v1.157.18), with still more to come. Every change was validated by:
 
 - a stable load test (same endpoint, same load)
-- a CPU profile (flamegraph) that explains the delta
 - a before/after comparison on the same benchmark endpoint
+- a CPU profile (flamegraph) that explains the delta
 
 ### Why feature-focused endpoints
 
@@ -135,10 +135,23 @@ See: [#6442](https://github.com/TanStack/router/pull/6442), [#6447](https://gith
 
 Like every PR in this series, this change was validated by profiling the impacted method before and after. For example we can see in the example below that the `buildLocation` method went from being one of the major bottlenecks of a navigation to being a very small part of the overall cost:
 
-|        |                                                                                                                                         |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Before | ![CPU profiling of buildLocation before the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/build-location-before.png) |
-| After  | ![CPU profiling of buildLocation after the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/build-location-after.png)   |
+
+<figure>
+<img src="/blog-assets/tanstack-start-ssr-performance-600-percent/build-location-before.png" alt="CPU profiling of buildLocation before the changes">
+<figcaption>
+<b>Before:</b> The <code>RouterCore.buildLocation</code> (red arrow) method was creating a <code>new URL</code> every time (purple blocks), and then updating its search which re-triggers an expensive parsing step.
+</figcaption>
+</figure>
+
+<figure>
+<img
+src="/blog-assets/tanstack-start-ssr-performance-600-percent/build-location-after.png"
+alt="CPU profiling of buildLocation after the changes"
+>
+<figcaption>
+<b>After:</b> The <code>isSafeInternal</code> check is able to fully skip the <code>URL</code>. <code>RouterCore.buildLocation</code> becomes an almost insignificant part of the overall cost.
+</figcaption>
+</figure>
 
 ## Finding 2: SSR does not need reactivity
 
@@ -183,10 +196,26 @@ See: [#6497](https://github.com/TanStack/router/pull/6497), [#6482](https://gith
 
 Taking the example of the `useRouterState` hook, we can see that most of the client-only work was removed from the SSR pass, leading to a ~2x improvement in the total CPU time of this hook.
 
-|        |                                                                                                                                        |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Before | ![CPU profiling of useRouterState before the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/router-state-before.png) |
-| After  | ![CPU profiling of useRouterState after the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/router-state-after.png)   |
+<figure>
+<img
+  src="/blog-assets/tanstack-start-ssr-performance-600-percent/router-state-before.png"
+  alt="CPU profiling of useRouterState before the changes"
+>
+<figcaption>
+<b>Before:</b> The <code>useRouterState</code> hook was subscribing to the router store, which triggers many sync and memoization calls before calling the <code>select</code> callback.
+</figcaption>
+</figure>
+
+
+<figure>
+<img
+  src="/blog-assets/tanstack-start-ssr-performance-600-percent/router-state-after.png"
+  alt="CPU profiling of useRouterState after the changes"
+>
+<figcaption>
+<b>After:</b> The <code>isServer</code> check is able to skip directly to the <code>select</code> callback.
+</figcaption>
+</figure>
 
 ## Finding 3: server-only fast paths are worth it (when gated correctly)
 
@@ -234,6 +263,9 @@ See: [#4648](https://github.com/TanStack/router/pull/4648), [#6505](https://gith
 
 Taking the example of the `matchRoutesInternal` method, we can see that its children's total CPU time was reduced by ~25%.
 
+
+<!-- TODO: these images aren't good. They don't really show an improvement that came from a server-only fast path. -->
+
 |        |                                                                                                                                        |
 | ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | Before | ![CPU profiling of interpolatePath before the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/interpolate-before.png) |
@@ -268,10 +300,26 @@ See: [#6456](https://github.com/TanStack/router/pull/6456), [#6515](https://gith
 
 Taking the example of the `startViewTransition` method, we can see that the total CPU time of this method was reduced by >50%.
 
-|        |                                                                                                                                       |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Before | ![CPU profiling of startViewTransition before the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/delete-before.png) |
-| After  | ![CPU profiling of startViewTransition after the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/delete-after.png)   |
+<figure>
+<img
+  src="/blog-assets/tanstack-start-ssr-performance-600-percent/delete-before.png"
+  alt="CPU profiling of startViewTransition before the changes"
+>
+<figcaption>
+<b>Before:</b> The <code>startViewTransition</code> function (red arrow) has ~400ms of self-time in the hot path (i.e. not including the time spent in its children).
+</figcaption>
+</figure>
+
+
+<figure>
+<img
+  src="/blog-assets/tanstack-start-ssr-performance-600-percent/delete-after.png"
+  alt="CPU profiling of startViewTransition after the changes"
+>
+<figcaption>
+<b>After:</b> Removing the <code>delete</code> statement almost completely removes the self-time of this function.
+</figcaption>
+</figure>
 
 ## Results
 
