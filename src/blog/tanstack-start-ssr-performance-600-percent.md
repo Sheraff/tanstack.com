@@ -261,12 +261,25 @@ See: [#4648](https://github.com/TanStack/router/pull/4648), [#6505](https://gith
 
 Taking the example of the `matchRoutesInternal` method, we can see that its children's total CPU time was reduced by ~25%.
 
-<!-- TODO: these images aren't good. They don't really show an improvement that came from a server-only fast path. -->
+<figure>
+<img
+  src="/blog-assets/tanstack-start-ssr-performance-600-percent/interpolate-before.png"
+  alt="CPU profiling of interpolatePath before the changes"
+>
+<figcaption>
+<b>Before:</b> The <code>interpolatePath</code> function spends >1s using the generic <code>parseSegment</code> function.
+</figcaption>
+</figure>
 
-|        |                                                                                                                                        |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Before | ![CPU profiling of interpolatePath before the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/interpolate-before.png) |
-| After  | ![CPU profiling of interpolatePath after the changes](/blog-assets/tanstack-start-ssr-performance-600-percent/interpolate-after.png)   |
+<figure>
+<img
+  src="/blog-assets/tanstack-start-ssr-performance-600-percent/interpolate-after.png"
+  alt="CPU profiling of interpolatePath after the changes"
+>
+<figcaption>
+<b>After:</b> The <code>interpolatePath</code> function now uses the server-only fast path, skipping <code>parseSegment</code> entirely.
+</figcaption>
+</figure>
 
 ## Finding 4: `delete` can be expensive
 
