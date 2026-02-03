@@ -3,25 +3,25 @@ published: 2026-02-01
 authors:
   - Manuel Schiller
   - Florian Pellet
-title: 'From 3000ms to 14ms: CPU profiling of TanStack Start SSR under heavy load'
-# title: 'Profile, Fix, Repeat: 2x SSR Throughput in 20 PRs'
-# title: '99.5% Latency Reduction in 20 PRs'
-# title: '231x Latency Drop: SSR Flamegraphs under heavy load'
-# title: '343x Faster Latency p95: Profiling SSR Hot Paths in TanStack Start'
+title: '5x SSR Throughput: CPU profiling of TanStack Start SSR under heavy load'
+# title: 'Profile, Fix, Repeat: 5x SSR Throughput in 20 PRs'
+# title: '10x Latency Reduction in 20 PRs'
+# title: '10x Latency Drop: SSR Flamegraphs under heavy load'
+# title: '5x SSR Throughput: Profiling SSR Hot Paths in TanStack Start'
 ---
 
 ## TL;DR
 
 We improved TanStack Start's SSR performance dramatically. Under sustained load (100 concurrent connections, 30 seconds):
 
-<!-- these are matteo's numbers, they don't look amazing (low throughput), maybe we should use our own numbers? we'll cite his in the conclusion anyway. -->
-
-- **Throughput**: 477 req/s → 1,041 req/s (**2.2x**)
-- **Average latency**: 3,171ms → 14ms (**231x faster**)
-- **p95 latency**: 10,001ms (timeout) → 29ms (**343x faster**)
-- **Success rate**: 75% → 100% (the server stopped failing under load)
+- **Throughput**: 427 req/s → 2357 req/s (**5.5x**)
+- **Average latency**: 424ms → 43ms (**9.9x faster**)
+- **p99 latency**: 6558ms → 928ms (**7.1x faster**)
+- **Success rate**: 99.96% → 100% (the server stopped failing under load)
 
 For SSR-heavy deployments, this translates directly to lower hosting costs, the ability to handle traffic spikes without scaling, and eliminating user-facing errors.
+
+This work started after `v1.154.4` and targets server-side rendering performance. The goal was to increase throughput and reduce server CPU time per request while keeping correctness guarantees.
 
 We did it with a repeatable process, not a single clever trick:
 
@@ -35,19 +35,13 @@ We did it with a repeatable process, not a single clever trick:
 
 The changes span over [20 PRs](https://github.com/TanStack/router/compare/v1.154.4...v1.157.18); we highlight the highest-impact patterns below.
 
-<!-- the "What we optimized" section and "Methodology" feel a little redundant because "what we optimized" doesn't actually say what we optimized, just *how* we did it, which is part of the methodology. -->
-
-## What we optimized (and what we did not)
-
-This work started after `v1.154.4` and targets server-side rendering performance. The goal was to increase throughput and reduce server CPU time per request while keeping correctness guarantees.
-
-We are not claiming that any single line of code is "the" reason. This work spanned over 20 PRs, with still more to come. And every change was validated by:
-
-- a stable load test
-- a CPU profile (flamegraph)
-- a before/after comparison on the same benchmark endpoint
-
 ## Methodology: feature-focused endpoints + flamegraphs
+
+We are not claiming that any single line of code is "the" reason. This work spanned over 20 PRs, with still more to come. Every change was validated by:
+
+- a stable load test (same endpoint, same load)
+- a CPU profile (flamegraph) that explains the delta
+- a before/after comparison on the same benchmark endpoint
 
 ### Why feature-focused endpoints
 
@@ -195,7 +189,7 @@ Taking the example of the `useRouterState` hook, we can see that most of the cli
 
 ### The mechanism
 
-Client code cares about bundle size. Server code cares about CPU time per request. Those constraints are different (this is a _general_ rule, not a _universal_ one).
+As a general rule, client code cares about bundle size, while server code cares about CPU time per request. Those constraints are different.
 
 If you can guard a branch with a **build-time constant** like `isServer`, you can:
 
@@ -294,7 +288,7 @@ Benchmark: placeholder text, should link to Matteo's article.
 
 The "before" numbers show a server under severe stress: 25% of requests failed (likely timeouts), and p90/p95 hit the 10s timeout ceiling. After the optimizations, the server handles the same load comfortably with sub-30ms tail latency and zero failures.
 
-To be clear: TanStack Start was not broken before these changes. Under normal traffic, SSR worked fine. These numbers reflect behavior under _sustained heavy load_—the kind you see during traffic spikes or load testing. The optimizations ensure the server degrades gracefully instead of falling over.
+To be clear: TanStack Start was not broken before these changes. Under normal traffic, SSR worked fine. These numbers reflect behavior under _sustained heavy load_ (the kind you see during traffic spikes or load testing). The optimizations ensure the server degrades gracefully instead of falling over.
 
 ### Event-loop utilization
 
