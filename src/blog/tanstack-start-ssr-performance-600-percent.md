@@ -176,6 +176,9 @@ function useRouterState() {
 
 See: [#6497](https://github.com/TanStack/router/pull/6497), [#6482](https://github.com/TanStack/router/pull/6482)
 
+> [!NOTE]
+> `isServer` is a build-time constant. This means that the above code is not violating the rules of hooks in React. At runtime, the code will always execute the same branch.
+
 ### Measuring the improvements
 
 Taking the example of the `useRouterState` hook, we can see that most of the client-only work was removed from the SSR pass, leading to a ~2x improvement in the total CPU time of this hook.
