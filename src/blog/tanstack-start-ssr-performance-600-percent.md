@@ -33,11 +33,11 @@ We did it with a repeatable process, not a single clever trick:
   - add server-only fast paths behind a build-time `isServer` flag
   - avoid `delete` in performance-sensitive code
 
-The changes span over [20 PRs](https://github.com/TanStack/router/compare/v1.154.4...v1.157.18); we highlight the highest-impact patterns below.
+We highlight the highest-impact patterns below.
 
 ## Methodology: feature-focused endpoints + flamegraphs
 
-We are not claiming that any single line of code is "the" reason. This work spanned over 20 PRs, with still more to come. Every change was validated by:
+We are not claiming that any single line of code is "the" reason. This work spanned over [20 PRs](https://github.com/TanStack/router/compare/v1.154.4...v1.157.18), with still more to come. Every change was validated by:
 
 - a stable load test (same endpoint, same load)
 - a CPU profile (flamegraph) that explains the delta
