@@ -135,7 +135,6 @@ See: [#6442](https://github.com/TanStack/router/pull/6442), [#6447](https://gith
 
 Like every PR in this series, this change was validated by profiling the impacted method before and after. For example we can see in the example below that the `buildLocation` method went from being one of the major bottlenecks of a navigation to being a very small part of the overall cost:
 
-
 <figure>
 <img src="/blog-assets/tanstack-start-ssr-performance-600-percent/build-location-before.png" alt="CPU profiling of buildLocation before the changes">
 <figcaption>
@@ -206,7 +205,6 @@ Taking the example of the `useRouterState` hook, we can see that most of the cli
 </figcaption>
 </figure>
 
-
 <figure>
 <img
   src="/blog-assets/tanstack-start-ssr-performance-600-percent/router-state-after.png"
@@ -263,7 +261,6 @@ See: [#4648](https://github.com/TanStack/router/pull/4648), [#6505](https://gith
 
 Taking the example of the `matchRoutesInternal` method, we can see that its children's total CPU time was reduced by ~25%.
 
-
 <!-- TODO: these images aren't good. They don't really show an improvement that came from a server-only fast path. -->
 
 |        |                                                                                                                                        |
@@ -309,7 +306,6 @@ Taking the example of the `startViewTransition` method, we can see that the tota
 <b>Before:</b> The <code>startViewTransition</code> function (red arrow) has ~400ms of self-time in the hot path (i.e. not including the time spent in its children).
 </figcaption>
 </figure>
-
 
 <figure>
 <img
