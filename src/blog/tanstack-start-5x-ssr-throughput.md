@@ -79,6 +79,8 @@ flame run ./dist/server.mjs
 
 The resulting flamegraph can be read with a tool like [Speedscope](https://www.speedscope.app/):
 
+<!-- TODO: this section is not good. It doesn't teach anything. Methodology has already been explained. Either teach about flamegraphs, show an easy to understand example, link to a tutorial... or just remove it. -->
+
 - Focus on **self time** first. That is where the CPU is actually spent, not just where time is waiting on children.
 - Fix one hotspot, re-run, and re-profile.
 - Prefer changes that remove work in the steady state, not just shift it.
