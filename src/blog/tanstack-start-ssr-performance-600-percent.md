@@ -288,7 +288,7 @@ Benchmark: placeholder text, should link to Matteo's article.
 
 The "before" numbers show a server under severe stress: 25% of requests failed (likely timeouts), and p90/p95 hit the 10s timeout ceiling. After the optimizations, the server handles the same load comfortably with sub-30ms tail latency and zero failures.
 
-To be clear: TanStack Start was not broken before these changes. Under normal traffic, SSR worked fine. These numbers reflect behavior under _sustained heavy load_ (the kind you see during traffic spikes or load testing). The optimizations ensure the server degrades gracefully instead of falling over.
+To be clear: TanStack Start was not broken before these changes. Under normal traffic, SSR worked fine. These numbers reflect behavior under _sustained heavy load_ (the kind you see during traffic spikes or load testing). The optimizations increase headroom. At this same load, the server no longer drops requests, and it only starts failing at substantially higher load than before.
 
 ### Event-loop utilization
 
