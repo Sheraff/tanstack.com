@@ -3,11 +3,11 @@ published: 2026-02-01
 authors:
   - Manuel Schiller
   - Florian Pellet
-title: '5x SSR Throughput: CPU profiling of TanStack Start SSR under heavy load'
+# title: '5x SSR Throughput: CPU profiling of TanStack Start SSR under heavy load'
 # title: 'Profile, Fix, Repeat: 5x SSR Throughput in 20 PRs'
 # title: '10x Latency Reduction in 20 PRs'
 # title: '10x Latency Drop: SSR Flamegraphs under heavy load'
-# title: '5x SSR Throughput: Profiling SSR Hot Paths in TanStack Start'
+title: '5x SSR Throughput: Profiling SSR Hot Paths in TanStack Start'
 ---
 
 ## TL;DR
@@ -21,19 +21,20 @@ We improved TanStack Start's SSR performance dramatically. Under sustained load 
 
 For SSR-heavy deployments, this translates directly to lower hosting costs, the ability to handle traffic spikes without scaling, and eliminating user-facing errors.
 
-This work started after `v1.154.4` and targets server-side rendering performance. The goal was to increase throughput and reduce server CPU time per request while keeping correctness guarantees.
+This work started after `v1.154.4` and targets server-side rendering performance. The goal was to increase throughput and reduce server CPU time per request.
 
 We did it with a repeatable process, not a single clever trick:
 
 - **Measure under load**, not in microbenchmarks.
-- Use CPU profiling to find the highest-impact work.
-- Remove entire categories of cost from the server hot path:
-  - avoid `URL` construction/parsing when it is not required
-  - avoid reactivity work during SSR (subscriptions, structural sharing, batching)
-  - add server-only fast paths behind a build-time `isServer` flag
-  - avoid `delete` in performance-sensitive code
+- Use **CPU profiling** to find the highest-impact work.
+- Remove **entire categories of cost** from the server hot path.
 
-We highlight the highest-impact patterns below.
+We highlight the highest-impact patterns below:
+
+- avoid `URL` construction/parsing when it is not required
+- avoid reactivity work during SSR (subscriptions, structural sharing, batching)
+- add server-only fast paths behind a build-time `isServer` flag
+- avoid `delete` in performance-sensitive code
 
 ## Methodology: feature-focused endpoints + flamegraphs
 
