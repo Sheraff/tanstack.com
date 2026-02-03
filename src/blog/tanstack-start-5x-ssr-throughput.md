@@ -10,6 +10,8 @@ authors:
 title: '5x SSR Throughput: Profiling SSR Hot Paths in TanStack Start'
 ---
 
+![A flamegraph island in the tanstack universe](/blog-assets/tanstack-start-5x-ssr-throughput/header.png)
+
 ## TL;DR
 
 We improved TanStack Start's SSR performance dramatically. Under sustained load (100 concurrent connections, 30 seconds):
