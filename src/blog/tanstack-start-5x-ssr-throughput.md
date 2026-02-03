@@ -137,7 +137,7 @@ See: [#6442](https://github.com/TanStack/router/pull/6442), [#6447](https://gith
 Like every PR in this series, this change was validated by profiling the impacted method before and after. For example we can see in the example below that the `buildLocation` method went from being one of the major bottlenecks of a navigation to being a very small part of the overall cost:
 
 <figure>
-<img src="/blog-assets/tanstack-start-ssr-performance-600-percent/build-location-before.png" alt="CPU profiling of buildLocation before the changes">
+<img src="/blog-assets/tanstack-start-5x-ssr-throughput/build-location-before.png" alt="CPU profiling of buildLocation before the changes">
 <figcaption>
 <b>Before:</b> The <code>RouterCore.buildLocation</code> (red arrow) method was creating a <code>new URL</code> every time (purple blocks), and then updating its search which re-triggers an expensive parsing step.
 </figcaption>
@@ -145,7 +145,7 @@ Like every PR in this series, this change was validated by profiling the impacte
 
 <figure>
 <img
-src="/blog-assets/tanstack-start-ssr-performance-600-percent/build-location-after.png"
+src="/blog-assets/tanstack-start-5x-ssr-throughput/build-location-after.png"
 alt="CPU profiling of buildLocation after the changes"
 >
 <figcaption>
@@ -198,7 +198,7 @@ Taking the example of the `useRouterState` hook, we can see that most of the cli
 
 <figure>
 <img
-  src="/blog-assets/tanstack-start-ssr-performance-600-percent/router-state-before.png"
+  src="/blog-assets/tanstack-start-5x-ssr-throughput/router-state-before.png"
   alt="CPU profiling of useRouterState before the changes"
 >
 <figcaption>
@@ -208,7 +208,7 @@ Taking the example of the `useRouterState` hook, we can see that most of the cli
 
 <figure>
 <img
-  src="/blog-assets/tanstack-start-ssr-performance-600-percent/router-state-after.png"
+  src="/blog-assets/tanstack-start-5x-ssr-throughput/router-state-after.png"
   alt="CPU profiling of useRouterState after the changes"
 >
 <figcaption>
@@ -264,7 +264,7 @@ Taking the example of the `matchRoutesInternal` method, we can see that its chil
 
 <figure>
 <img
-  src="/blog-assets/tanstack-start-ssr-performance-600-percent/interpolate-before.png"
+  src="/blog-assets/tanstack-start-5x-ssr-throughput/interpolate-before.png"
   alt="CPU profiling of interpolatePath before the changes"
 >
 <figcaption>
@@ -274,7 +274,7 @@ Taking the example of the `matchRoutesInternal` method, we can see that its chil
 
 <figure>
 <img
-  src="/blog-assets/tanstack-start-ssr-performance-600-percent/interpolate-after.png"
+  src="/blog-assets/tanstack-start-5x-ssr-throughput/interpolate-after.png"
   alt="CPU profiling of interpolatePath after the changes"
 >
 <figcaption>
@@ -313,7 +313,7 @@ Taking the example of the `startViewTransition` method, we can see that the tota
 
 <figure>
 <img
-  src="/blog-assets/tanstack-start-ssr-performance-600-percent/delete-before.png"
+  src="/blog-assets/tanstack-start-5x-ssr-throughput/delete-before.png"
   alt="CPU profiling of startViewTransition before the changes"
 >
 <figcaption>
@@ -323,7 +323,7 @@ Taking the example of the `startViewTransition` method, we can see that the tota
 
 <figure>
 <img
-  src="/blog-assets/tanstack-start-ssr-performance-600-percent/delete-after.png"
+  src="/blog-assets/tanstack-start-5x-ssr-throughput/delete-after.png"
   alt="CPU profiling of startViewTransition after the changes"
 >
 <figcaption>
@@ -359,15 +359,15 @@ For reference, the machine on which these were measured reaches 100% event-loop 
 
 #### 100 links per page
 
-![Event-loop utilization vs throughput for links-100, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/elu-links.png)
+![Event-loop utilization vs throughput for links-100, before and after](/blog-assets/tanstack-start-5x-ssr-throughput/elu-links.png)
 
 #### Deeply nested layout routes
 
-![Event-loop utilization vs throughput for nested routes, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/elu-nested.png)
+![Event-loop utilization vs throughput for nested routes, before and after](/blog-assets/tanstack-start-5x-ssr-throughput/elu-nested.png)
 
 #### Minimal route (baseline)
 
-![Event-loop utilization vs throughput for minimal route, before and after](/blog-assets/tanstack-start-ssr-performance-600-percent/elu-empty.png)
+![Event-loop utilization vs throughput for minimal route, before and after](/blog-assets/tanstack-start-5x-ssr-throughput/elu-empty.png)
 
 ## Conclusion
 
